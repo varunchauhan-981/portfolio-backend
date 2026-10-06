@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Password save hone se pehle hash hoga (async bina next ke)
+// Password save hone se pehle hash hoga
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
@@ -40,4 +40,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+export default User;

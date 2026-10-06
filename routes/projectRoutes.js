@@ -1,21 +1,43 @@
-const express = require('express');
+import express from 'express';
+import Project from '../models/Project.js';
+import { protect } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const {
-  getProjects,
-  getProjectById,
-  createProject,
-  updateProject,
-  deleteProject,
-} = require('../controllers/projectController');
-const { protect } = require('../middleware/authMiddleware');
 
-// Public routes: koi bhi dekh sakta hai
-router.get('/', getProjects);
-router.get('/:id', getProjectById);
+// Public: Get all projects
+router.get('/', async (req, res) => {
+  try {
+    const projects = await Project.find().sort({ createdAt: -1 });
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
-// Protected routes: sirf logged-in admin use kar sakta hai
-router.post('/', protect, createProject);
-router.put('/:id', protect, updateProject);
-router.delete('/:id', protect, deleteProject);
+// Admin Protected: Create a project
+router.post('/', protect, async (req, res) => {
+  try {
+    const project = new Project(req.body);
+    const createdProject = await project.save();
+    res.status(201).json(createdProject);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
-module.exports = router;
+// Admin Protected: Delete a project
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (project) {
+      await Project.findByIdAndDelete(req.params.id);
+      res.json({ message: 'Project removed' });
+    } else {
+      res.status(404).json({ message: 'Project not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export default router; // <-- Yeh line zaroori hai

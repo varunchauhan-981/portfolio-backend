@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 // Helper function to generate JWT
 const generateToken = (id) => {
@@ -11,7 +11,7 @@ const generateToken = (id) => {
 // @desc    Register a new admin user
 // @route   POST /api/auth/register
 // @access  Public
-const registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -48,13 +48,20 @@ const registerUser = async (req, res) => {
 // @desc    Auth user & get token (Login)
 // @route   POST /api/auth/login
 // @access  Public
-const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // Email trim aur lowercase
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
 
-    if (user && (await user.matchPassword(password))) {
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+
+    if (isMatch) {
       res.json({
         _id: user._id,
         username: user.username,
@@ -68,5 +75,3 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-module.exports = { registerUser, loginUser };
