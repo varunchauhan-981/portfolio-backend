@@ -1,26 +1,22 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
 
-export const protect = async (req, res, next) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      req.user = await User.findById(decoded.id).select('-password');
-      return next();
-    } catch (error) {
-      console.error('Token verification failed:', error.message);
-      return res.status(401).json({ message: 'Not authorized, token failed' });
-    }
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token provided' });
+export const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).json({ message: 'Token is not valid!' });
+      }
+      req.user = user;
+      next();
+    });
+  } else {
+    return res.status(401).json({ message: 'You are not authenticated!' });
   }
 };
+
+// MASTER FIX: Purane routes jo 'protect' maang rahe hain, unko bhi yahi function bhej do
+export const protect = verifyToken;
