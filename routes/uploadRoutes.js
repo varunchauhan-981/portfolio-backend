@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
-import { protect } from '../middleware/authMiddleware.js';
+import { verifyToken } from '../middleware/authMiddleware.js'; // <-- Master fix applied here
 
 dotenv.config();
 
@@ -15,17 +15,17 @@ cloudinary.config({
 
 const router = express.Router();
 
-// Multer memory storage (file buffer memory me rahega)
+// Multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // <-- Fixed: Max 10MB limit for large PNGs
 });
 
 // @route   POST /api/upload
 // @desc    Upload image to Cloudinary
 // @access  Private (Admin only)
-router.post('/', protect, upload.single('image'), async (req, res) => {
+router.post('/', verifyToken, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file uploaded' });
